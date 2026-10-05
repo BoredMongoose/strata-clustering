@@ -1,128 +1,107 @@
-# Strata Clustering
+# Workforce diversity: which US industries are the least diverse?
 
-Workforce diversity analysis of US labour force demographics by **sector** and **industry**, using BLS-style employment data (2020–2023). This repository explores gender balance, ethnic composition, diversity trends, and demographic clustering.
+I used US labour force data (2020–2023) to look at who works in each sector and industry: the share of women, and
+the share of white, Black, Asian and Hispanic/Latino workers. The analysis is in
+[`notebooks/workforce_diversity.ipynb`](notebooks/workforce_diversity.ipynb).
 
-## Branch: `feature/load-data`
+![Gender balance by sector](images/01_gender_balance.png)
 
-This branch adds the data-loading pipeline and exploratory analysis notebook. It loads a CSV of employment demographics, cleans and validates the data, then answers six research questions with visualisations and clustering.
+<!-- business:start -->
+## Business impact
 
-## Project structure
+- **Question:** Which US industries most need diversity hiring?
+- **Key finding:** Construction, agriculture and mining. They are 88–92% white, and construction is 89% men. White workers are the majority in every sector (71–92%).
+- **Recommendation:** Start diversity hiring in construction, agriculture and mining, and focus on hiring women in construction, mining and transportation. Track the same numbers every year: mining's Hispanic/Latino share rose 5 points in two years, so they can move.
+- **Estimated impact:** **89%** of construction workers are men, the most male-dominated sector (mining is 85%).
+- **Case study:** [boredmongoose.github.io/projects/workforce.html](https://boredmongoose.github.io/projects/workforce.html)
+<!-- business:end -->
 
-```
-strata-clustering/
-├── data/
-│   └── raw/
-│       └── dataset-google.csv   # employment demographics (not tracked in git)
-├── notebooks/
-│   └── 01_load.ipynb            # load, clean, and analyse the dataset
-├── environment.yml                # conda environment export
-└── README.md
-```
+## What I found
 
-## Dataset
+| # | Finding | Numbers |
+|---|---|---|
+| 1 | **Construction, agriculture and mining are the least diverse sectors.** | 88–92% white; construction is 89% men, mining 85% |
+| 2 | **White workers are the majority in every sector.** | from 71% (transportation and utilities) to 92% (agriculture) |
+| 3 | **Education and health is the biggest and most female sector.** | 75% women, 23% of all workers |
+| 4 | **Mining changed the most between 2021 and 2023.** | Hispanic/Latino share up 5.4 points |
+| 5 | **110 industries fall into four groups.** | 70 mostly white, 21 with more Black workers, 14 with more Hispanic workers, 5 with many more Asian workers |
 
-Place `dataset-google.csv` in `data/raw/`. The file is listed in `.gitignore` and must be added locally.
+![Ethnic mix by sector](images/02_ethnic_mix.png)
 
-| Column | Description |
-|---|---|
-| `year` | Survey year (2020–2023) |
-| `sector` | Top-level industry sector |
-| `subsector` | Subsector (empty for sector-level rows) |
-| `industry_group` | Industry group (empty for sector-level rows) |
-| `industry` | Specific industry (empty for sector-level rows) |
-| `total_employed_in_thousands` | Total employment |
-| `percent_women` | Share of women in the workforce |
-| `percent_white` | Share of white workers |
-| `percent_black_or_african_american` | Share of Black / African American workers |
-| `percent_asian` | Share of Asian workers |
-| `percent_hispanic_or_latino` | Share of Hispanic / Latino workers |
+## How I did it
 
-The raw file contains ~1,270 rows across sector, subsector, industry group, and industry levels. After cleaning, the notebook works with **1,128 rows**, including **52 sector-level rows** across **13 sectors**.
+1. **Cleaned the data:** dropped blank rows and the "Total" row, fixed percentages typed as whole numbers (87.5
+   instead of 0.875), and removed one impossible value (an Asian share above 100%).
+2. **Answered six questions** with pandas: which sectors look alike, which are most male or female, which changed
+   most, whether one group dominates, whether bigger sectors are more diverse, and which industries look alike.
+3. **Grouped sectors and industries with K-Means** (scikit-learn), after standardising the columns, and chose the
+   number of groups with the elbow method. PCA puts the groups on a 2D chart.
+4. **Scored diversity with Shannon entropy:** higher means workers are spread more evenly across the groups.
+
+<p float="left">
+  <img src="images/03_sector_groups.png" width="49%" />
+  <img src="images/05_industry_groups.png" width="49%" />
+</p>
+
+## Limitations
+
+- Only four years of data (2020–2023).
+- Hispanic/Latino is an ethnicity, so it overlaps with the race groups and the shares don't add up to 100%.
+- The percentages are survey estimates, so small industries can jump around from year to year.
+- K-Means always finds groups, even weak ones, so the groups describe the data rather than prove anything.
+
+<!-- next:start -->
+## Next steps
+
+1. Add pay data, to see whether the least diverse industries also pay differently.
+2. Use more years, to tell real changes from survey noise.
+3. Look at job level (entry level vs management), not just the industry.
+<!-- next:end -->
 
 ## Setup
 
-### Prerequisites
-
-- [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda
-- Python 3.11+
-
-### Environment
-
-Create and activate a conda environment with the required packages:
+You need Python 3.11+ with pandas, numpy, matplotlib, seaborn, scikit-learn and jupyter. With conda:
 
 ```bash
 conda create -n strata-clustering python=3.11 pandas numpy matplotlib seaborn scikit-learn jupyter ipykernel -y
 conda activate strata-clustering
 ```
 
-Alternatively, use the exported environment (note: `environment.yml` includes a machine-specific `prefix` path that you may need to remove):
+(`environment.yml` is my full environment export; it includes a machine-specific `prefix` line you may need to remove.)
+
+## Reproduce
+
+1. Put `dataset-google.csv` in `data/raw/` (CSV files are not tracked in git).
+2. Run the notebook from the `notebooks/` folder:
 
 ```bash
-conda env create -f environment.yml
-conda activate base
+cd notebooks
+jupyter notebook workforce_diversity.ipynb
 ```
 
-Register the kernel for Jupyter:
+The notebook saves its charts into `images/`. `notebooks/workforce_diversity.py` is the same notebook as a plain
+Python file (made with jupytext), which is easier to read in a diff.
 
-```bash
-python -m ipykernel install --user --name strata-clustering
+## Project structure
+
+```
+strata-clustering/
+├── data/raw/dataset-google.csv      # employment demographics (not tracked in git)
+├── notebooks/
+│   ├── workforce_diversity.ipynb    # the analysis, with outputs
+│   └── workforce_diversity.py       # the same notebook as plain Python
+├── images/                          # charts saved by the notebook
+├── environment.yml
+└── README.md
 ```
 
-## Running the analysis
+## Data columns
 
-1. Clone the repository and check out the branch:
-
-   ```bash
-   git clone https://github.com/BoredMongoose/strata-clustering.git
-   cd strata-clustering
-   git checkout feature/load-data
-   ```
-
-2. Add `dataset-google.csv` to `data/raw/`.
-
-3. Start Jupyter and open the notebook:
-
-   ```bash
-   jupyter notebook notebooks/01_load.ipynb
-   ```
-
-4. Run all cells top to bottom. The notebook is self-contained — no other scripts are required.
-
-## Notebook overview
-
-`notebooks/01_load.ipynb` follows this workflow:
-
-1. **Load the data** — read the CSV, inspect shape, dtypes, and missing values
-2. **Clean the data** — drop blank rows, remove aggregate totals, normalise percentage columns, filter data-entry errors, and isolate sector-level rows for Q1–Q5
-3. **Plot styling** — shared colour palette and seaborn theme for all charts
-
-### Research questions
-
-| # | Question | Method |
-|---|---|---|
-| Q1 | Which sectors have similar demographic structures? | K-Means clustering (K=3) on standardised demographic features, visualised with PCA |
-| Q2 | Which sectors are most gender imbalanced? | Distance from 50/50 parity, weighted by sector employment share |
-| Q3 | Which sectors shifted most between 2021 and 2023? | Year-over-year change in demographic composition |
-| Q4 | Which sectors are dominated by a single ethnic group? | Maximum ethnic share per sector |
-| Q5 | Which sectors are most ethnically diverse, and how does that relate to size? | Shannon entropy of ethnic composition vs. employment |
-| Q6 | Which industries share similar ethnic compositions? | K-Means clustering (K=4) on industry-level ethnic features |
-
-Q1–Q5 use **sector-level rows** (where `subsector`, `industry_group`, and `industry` are empty). Q6 uses **industry-level rows** (~110 unique industries).
-
-## Key findings
-
-- Most sectors cluster together demographically; Construction, Agriculture, and Mining are outliers.
-- Education & health is the largest and most female-dominated sector.
-- Diversity is slowly improving — Mining, Financial, and Professional services shifted most from 2021 to 2023.
-- White workers are the majority in every sector; "diversity" here means relative spread, not balance.
-- Asian concentration is the most distinctive industry-level outlier.
-- Sector size and ethnic diversity are weakly positively related, with notable exceptions.
-
-## Dependencies
-
-- pandas
-- numpy
-- matplotlib
-- seaborn
-- scikit-learn
-- jupyter / ipykernel
+| Column | Description |
+|---|---|
+| `year` | Survey year (2020–2023) |
+| `sector` | Top-level industry sector |
+| `subsector`, `industry_group`, `industry` | Lower levels (empty on sector-level rows) |
+| `total_employed_in_thousands` | Total employment |
+| `percent_women` | Share of women |
+| `percent_white`, `percent_black_or_african_american`, `percent_asian`, `percent_hispanic_or_latino` | Ethnic shares |
